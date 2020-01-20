@@ -82,7 +82,12 @@ std::pair<float, float> ClassicLookahead::get_expected_delay_and_cong(int node, 
                      + R_upstream * (num_segs_same_dir * same_data.C_load + num_segs_ortho_dir * ortho_data.C_load)
                      + ipin_data.T_linear;
 
-        return std::make_pair(params.criticality * Tdel, (1 - params.criticality) * cong_cost);
+        float penalty_cost = num_segs_same_dir * same_data.penalty_cost
+                             + num_segs_ortho_dir * ortho_data.penalty_cost
+                             + ipin_data.penalty_cost
+                             + sink_data.penalty_cost;
+
+        return std::make_pair(penalty_cost + params.criticality * Tdel, (1 - params.criticality) * cong_cost);
     } else if (rr_type == IPIN) { /* Change if you're allowing route-throughs */
         return std::make_pair(0., device_ctx.rr_indexed_data[SINK_COST_INDEX].base_cost);
 
