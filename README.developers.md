@@ -157,7 +157,7 @@ However these should only be done on private branches, and never directly on `ma
 
 # Code Formatting
 
-Some parts of the VTR code base (e.g. VPR, libarchfpga, libvtrutil) have code formatting requirements which are checked automatically by regression tests.
+Some parts of the VTR code base (e.g. VPR, libarchfpga, libvtrutil) have C/C++ code formatting requirements which are checked automatically by regression tests.
 If your code changes are not compliant with the formatting, you can run:
 ```shell
 make format
@@ -165,9 +165,19 @@ make format
 from the root of the VTR source tree.
 This will automatically reformat your code to be compliant with formatting requirements (this requires the `clang-format` tool to be available on your system).
 
+Python code must also be compliant with the formatting.  To format Python code, you can run:
+```shell
+make format-py
+```
+from the root of the VTR source tree (this requires the `black` tool to be available on your system).
+
 ## Large Scale Reformatting
 
-For large scale reformatting (should only be performed by VTR maintainers) the script `dev/autoformat.py` can be used to reformat the code and commit it as 'VTR Robot', which  keeps the revision history clearer and records metadata about reformatting commits (which allows `git hyper-blame` to skip such commits).
+For large scale reformatting (should only be performed by VTR maintainers) the script `dev/autoformat.py` can be used to reformat the C/C++ code and commit it as 'VTR Robot', which  keeps the revision history clearer and records metadata about reformatting commits (which allows `git hyper-blame` to skip such commits).  The `--python` option can be used for large scale formatting of Python code.
+
+## Python Linting
+
+Python files are automatically checked using `pylint` to ensure they follow established Python conventions.  You can check an individual Python file by running `pylint <your_python_file>`, or check the entire repository by running `./dev/pylint_check.py`.
 
 # Running Tests
 
