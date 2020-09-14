@@ -22,7 +22,10 @@ void pathfinder_update_acc_cost_and_overuse_info(float acc_fac, OveruseInfo& ove
 
 float update_pres_fac(float new_pres_fac);
 
-t_trace* update_traceback(t_heap* hptr, ClusterNetId net_id);
+/* Pass in the hptr starting at a SINK with target_net_pin_index, which is the net pin index corresonding *
+ * to the sink (ranging from 1 to fanout). Returns a pointer to the first "new" node in the traceback     *
+ * (node not previously in trace).                                                                        */
+t_trace* update_traceback(t_heap* hptr, int target_net_pin_index, ClusterNetId net_id);
 
 void reset_path_costs(const std::vector<int>& visited_rr_nodes);
 
@@ -85,7 +88,7 @@ inline float get_single_rr_cong_cost(int inode, float pres_fac) {
 }
 
 void mark_ends(ClusterNetId net_id);
-void mark_remaining_ends(const std::vector<int>& remaining_sinks);
+void mark_remaining_ends(ClusterNetId net_id, const std::vector<int>& remaining_sinks);
 
 void free_traceback(ClusterNetId net_id);
 void drop_traceback_tail(ClusterNetId net_id);
@@ -194,4 +197,29 @@ void push_back_node(
     if (hptr) {
         heap->push_back(hptr);
     }
+}
+
+/* Puts an rr_node on the heap with the same condition as node_to_heap,
+ * but do not fix heap property yet as that is more efficiently done from
+ * bottom up with build_heap. Certain information is also added     */
+template<typename T>
+void push_back_node_with_info(
+    T* heap,
+    int inode,
+    float total_cost,
+    float backward_path_cost,
+    float R_upstream,
+    float backward_path_delay,
+    PathManager* rcv_path_manager) {
+    t_heap* hptr = heap->alloc();
+    rcv_path_manager->alloc_path_struct(hptr->path_data);
+
+    hptr->index = inode;
+    hptr->cost = total_cost;
+    hptr->backward_path_cost = backward_path_cost;
+    hptr->R_upstream = R_upstream;
+
+    hptr->path_data->backward_delay = backward_path_delay;
+
+    heap->push_back(hptr);
 }

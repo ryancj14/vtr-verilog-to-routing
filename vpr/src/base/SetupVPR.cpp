@@ -352,6 +352,9 @@ static void SetupRouterOpts(const t_options& Options, t_router_opts* RouterOpts)
     RouterOpts->fixed_channel_width = Options.RouteChanWidth;
     RouterOpts->min_channel_width_hint = Options.min_route_chan_width_hint;
     RouterOpts->read_rr_edge_metadata = Options.read_rr_edge_metadata;
+    RouterOpts->reorder_rr_graph_nodes_algorithm = Options.reorder_rr_graph_nodes_algorithm;
+    RouterOpts->reorder_rr_graph_nodes_threshold = Options.reorder_rr_graph_nodes_threshold;
+    RouterOpts->reorder_rr_graph_nodes_seed = Options.reorder_rr_graph_nodes_seed;
 
     //TODO document these?
     RouterOpts->trim_empty_channels = false; /* DEFAULT */
@@ -373,6 +376,7 @@ static void SetupRouterOpts(const t_options& Options, t_router_opts* RouterOpts)
     RouterOpts->clock_modeling = Options.clock_modeling;
     RouterOpts->two_stage_clock_routing = Options.two_stage_clock_routing;
     RouterOpts->high_fanout_threshold = Options.router_high_fanout_threshold;
+    RouterOpts->high_fanout_max_slope = Options.router_high_fanout_max_slope;
     RouterOpts->router_debug_net = Options.router_debug_net;
     RouterOpts->router_debug_sink_rr = Options.router_debug_sink_rr;
     RouterOpts->router_debug_iteration = Options.router_debug_iteration;
@@ -530,6 +534,7 @@ static void SetupPlacerOpts(const t_options& Options, t_placer_opts* PlacerOpts)
     PlacerOpts->td_place_exp_last = Options.place_exp_last;
 
     PlacerOpts->place_algorithm = Options.PlaceAlgorithm;
+    PlacerOpts->place_quench_algorithm = Options.PlaceQuenchAlgorithm;
 
     PlacerOpts->constraints_file = Options.constraints_file;
 
@@ -569,6 +574,7 @@ static void SetupPlacerOpts(const t_options& Options, t_placer_opts* PlacerOpts)
 
     PlacerOpts->effort_scaling = Options.place_effort_scaling;
     PlacerOpts->timing_update_type = Options.timing_update_type;
+    PlacerOpts->enable_analytic_placer = Options.enable_analytic_placer;
 }
 
 static void SetupAnalysisOpts(const t_options& Options, t_analysis_opts& analysis_opts) {

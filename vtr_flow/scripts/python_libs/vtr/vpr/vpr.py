@@ -4,7 +4,7 @@
 from collections import OrderedDict
 from pathlib import Path
 from os import environ
-from vtr import find_vtr_file, CommandRunner, relax_w, determine_min_w, verify_file
+from vtr import CommandRunner, relax_w, determine_min_w, verify_file, paths
 from vtr.error import InspectError
 
 # pylint: disable=too-many-arguments
@@ -54,7 +54,7 @@ def run_relax_w(
             Path to the VPR executable
 
         logfile_base:
-            Base name for log files (e.g. "vpr" produces vpr.min_w.out, vpr.relaxed_w.out)
+            Base name for log files (e.g. "vpr" produces vpr.out, vpr.crit_path.out)
 
         vpr_args:
             Extra arguments for VPR
@@ -79,14 +79,8 @@ def run_relax_w(
     if "write_rr_graph" in vpr_args:
         del vpr_args["write_rr_graph"]
 
-    if "analysis" in vpr_args:
-        del vpr_args["analysis"]
-
-    if "route" in vpr_args:
-        del vpr_args["route"]
-
     if vpr_exec is None:
-        vpr_exec = find_vtr_file("vpr", is_executable=True)
+        vpr_exec = str(paths.vpr_exe_path)
 
     run(
         architecture,
@@ -98,8 +92,8 @@ def run_relax_w(
         vpr_exec=vpr_exec,
         vpr_args=vpr_args,
     )
-
-    if ("pack" in vpr_args or "place" in vpr_args) and "route" not in vpr_args:
+    explicit = "pack" in vpr_args or "place" in vpr_args or "analysis" in vpr_args
+    if explicit and "route" not in vpr_args:
         # Don't look for min W if routing was not run
         return
     if max_router_iterations:
@@ -178,7 +172,7 @@ def run(
     temp_dir.mkdir(parents=True, exist_ok=True)
 
     if vpr_exec is None:
-        vpr_exec = find_vtr_file("vpr", is_executable=True)
+        vpr_exec = str(paths.vpr_exe_path)
 
     # Verify that files are Paths or convert them to Paths and check that they exist
     architecture = verify_file(architecture, "Architecture")
@@ -218,7 +212,7 @@ def run(
     # 'fast_unwind_on_malloc=0' Provide more accurate leak stack traces
 
     environ["LSAN_OPTIONS"] = "suppressions={} exitcode=23 fast_unwind_on_malloc=0".format(
-        find_vtr_file("lsan.supp")
+        str(paths.lsan_supp)
     )
 
     command_runner.run_system_command(
