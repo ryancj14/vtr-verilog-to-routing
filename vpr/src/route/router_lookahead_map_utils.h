@@ -4,7 +4,7 @@
  * The router lookahead provides an estimate of the cost from an intermediate node to the target node
  * during directed (A*-like) routing.
  *
- * The VPR 7.0 lookahead (route/route_timing.c ==> get_timing_driven_expected_cost) lower-bounds the remaining delay and
+ * The VPR 7.0 classic lookahead (route/route_timing.c ==> get_timing_driven_expected_cost) lower-bounds the remaining delay and
  * congestion by assuming that a minimum number of wires, of the same type as the current node being expanded, can be used
  * to complete the route. While this method is efficient, it can run into trouble with architectures that use
  * multiple interconnected wire types.
@@ -21,6 +21,7 @@
 #include <queue>
 #include <unordered_map>
 #include "vpr_types.h"
+#include "vtr_geometry.h"
 #include "rr_node.h"
 
 namespace util {
@@ -36,13 +37,15 @@ enum e_representative_entry_method {
     MEDIAN
 };
 
-/* f_cost_map is an array of these cost entries that specifies delay/congestion estimates
- * to travel relative x/y distances */
+/**
+ * @brief f_cost_map is an array of these cost entries that specifies delay/congestion estimates to travel relative x/y distances
+ */
 class Cost_Entry {
   public:
-    float delay;
-    float congestion;
-    bool fill;
+    float delay;      ///<Delay value of the cost entry
+    float congestion; ///<Base cost value of the cost entry
+    bool fill;        ///<Boolean specifying whether this Entry was created as a result of the cost map
+                      ///<holes filling procedure
 
     Cost_Entry() {
         delay = std::numeric_limits<float>::infinity();
@@ -62,12 +65,21 @@ class Cost_Entry {
     }
 };
 
-/* a class that stores delay/congestion information for a given relative coordinate during the Dijkstra expansion.
- * since it stores multiple cost entries, it is later boiled down to a single representative cost entry to be stored
- * in the final lookahead cost map */
+/**
+ * @brief a class that stores delay/congestion information for a given relative coordinate during the Dijkstra expansion.
+ *
+ * Since it stores multiple cost entries, it is later boiled down to a single representative cost entry to be stored
+ * in the final lookahead cost map
+ *
+ * This class is used for the lookahead map implementation only
+ */
 class Expansion_Cost_Entry {
   private:
-    std::vector<Cost_Entry> cost_vector;
+    std::vector<Cost_Entry> cost_vector; ///<This vector is used to store different cost entries that are treated
+                                         ///<differently based on the below representative cost entry method computations
+                                         ///<Currently, only the smallest entry is stored in the vector, but this prepares
+                                         ///<the ground for other possible representative cost entry calculation methods.
+                                         ///<The vector is filled for a specific (chan_index, segment_index, delta_x, delta_y) cost entry.
 
     Cost_Entry get_smallest_entry() const;
     Cost_Entry get_average_entry() const;
@@ -124,18 +136,51 @@ class Expansion_Cost_Entry {
     }
 };
 
+// Keys in the RoutingCosts map
+struct RoutingCostKey {
+    // segment type index
+    int seg_index;
+
+    // offset of the destination connection box from the starting segment
+    vtr::Point<int> delta;
+
+    RoutingCostKey()
+        : seg_index(-1)
+        , delta(0, 0) {}
+    RoutingCostKey(int seg_index_arg, vtr::Point<int> delta_arg)
+        : seg_index(seg_index_arg)
+        , delta(delta_arg) {}
+
+    bool operator==(const RoutingCostKey& other) const {
+        return seg_index == other.seg_index && delta == other.delta;
+    }
+};
+
+// hash implementation for RoutingCostKey
+struct HashRoutingCostKey {
+    std::size_t operator()(RoutingCostKey const& key) const noexcept {
+        std::size_t hash = std::hash<int>{}(key.seg_index);
+        vtr::hash_combine(hash, key.delta.x());
+        vtr::hash_combine(hash, key.delta.y());
+        return hash;
+    }
+};
+
+// Map used to store intermediate routing costs
+typedef std::unordered_map<RoutingCostKey, float, HashRoutingCostKey> RoutingCosts;
+
 /* a class that represents an entry in the Dijkstra expansion priority queue */
 class PQ_Entry {
   public:
-    int rr_node_ind; //index in device_ctx.rr_nodes that this entry represents
-    float cost;      //the cost of the path to get to this node
+    RRNodeId rr_node; //index in device_ctx.rr_nodes that this entry represents
+    float cost;       //the cost of the path to get to this node
 
     /* store backward delay, R and congestion info */
     float delay;
     float R_upstream;
     float congestion_upstream;
 
-    PQ_Entry(int set_rr_node_ind, int /*switch_ind*/, float parent_delay, float parent_R_upstream, float parent_congestion_upstream, bool starting_node, float Tsw_adjust);
+    PQ_Entry(RRNodeId set_rr_node, int /*switch_ind*/, float parent_delay, float parent_R_upstream, float parent_congestion_upstream, bool starting_node, float Tsw_adjust);
 
     bool operator<(const PQ_Entry& obj) const {
         /* inserted into max priority queue so want queue entries with a lower cost to be greater */
@@ -146,10 +191,10 @@ class PQ_Entry {
 // A version of PQ_Entry that only calculates and stores the delay.
 class PQ_Entry_Delay {
   public:
-    int rr_node_ind;  //index in device_ctx.rr_nodes that this entry represents
+    RRNodeId rr_node; //index in device_ctx.rr_nodes that this entry represents
     float delay_cost; //the cost of the path to get to this node
 
-    PQ_Entry_Delay(int set_rr_node_ind, int /*switch_ind*/, const PQ_Entry_Delay* parent);
+    PQ_Entry_Delay(RRNodeId set_rr_node, int /*switch_ind*/, const PQ_Entry_Delay* parent);
 
     float cost() const {
         return delay_cost;
@@ -167,10 +212,10 @@ class PQ_Entry_Delay {
 // A version of PQ_Entry that only calculates and stores the base cost.
 class PQ_Entry_Base_Cost {
   public:
-    int rr_node_ind; //index in device_ctx.rr_nodes that this entry represents
+    RRNodeId rr_node; //index in device_ctx.rr_nodes that this entry represents
     float base_cost;
 
-    PQ_Entry_Base_Cost(int set_rr_node_ind, int /*switch_ind*/, const PQ_Entry_Base_Cost* parent);
+    PQ_Entry_Base_Cost(RRNodeId set_rr_node, int /*switch_ind*/, const PQ_Entry_Base_Cost* parent);
 
     float cost() const {
         return base_cost;
@@ -187,7 +232,7 @@ class PQ_Entry_Base_Cost {
 
 struct Search_Path {
     float cost;
-    int parent;
+    size_t parent;
     int edge;
 };
 
@@ -200,6 +245,43 @@ void expand_dijkstra_neighbours(const t_rr_graph_storage& rr_nodes,
                                 std::priority_queue<Entry,
                                                     std::vector<Entry>,
                                                     std::greater<Entry>>* pq);
+
+struct t_reachable_wire_inf {
+    e_rr_type wire_rr_type;
+    int wire_seg_index;
+
+    //Costs to reach the wire type from the current node
+    float congestion;
+    float delay;
+};
+
+//[0..device_ctx.physical_tile_types.size()-1][0..max_ptc-1][wire_seg_index]
+// ^                                           ^             ^
+// |                                           |             |
+// physical block type index                   |             Reachable wire info
+//                                             |
+//                                             SOURCE/OPIN ptc
+//
+// This data structure stores a set of delay and congestion values for each wire that can be reached from a given
+// SOURCE/OPIN of a given tile type.
+//
+// When querying this data structure, the minimum cost is computed for each delay/congestion pair, and returned
+// as the lookahead expected cost.
+typedef std::vector<std::vector<std::map<int, t_reachable_wire_inf>>> t_src_opin_delays;
+
+//[0..device_ctx.physical_tile_types.size()-1][0..max_ptc-1]
+// ^                                           ^
+// |                                           |
+// physical block type index                   |
+//                                             |
+//                                             SINK ptc
+//
+// This data structure stores the minimum delay to reach a specific SINK from the last connection between the wire (CHANX/CHANY)
+// and the tile's IPIN. If there are many connections to the same IPIN, the one with the minimum delay is selected.
+typedef std::vector<std::vector<t_reachable_wire_inf>> t_chan_ipins_delays;
+
+t_src_opin_delays compute_router_src_opin_lookahead();
+t_chan_ipins_delays compute_router_chan_ipin_lookahead();
 
 } // namespace util
 
