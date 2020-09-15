@@ -67,19 +67,12 @@ int main(int argc, const char** argv) {
         }
 
         auto& timing_ctx = g_vpr_ctx.timing();
-        VTR_LOG("Timing analysis took %g seconds (%g STA, %g slack) (%zu full updates: %zu setup, %zu hold, %zu combined).\n",
-                timing_ctx.stats.timing_analysis_wallclock_time(),
-                timing_ctx.stats.sta_wallclock_time,
-                timing_ctx.stats.slack_wallclock_time,
-                timing_ctx.stats.num_full_updates(),
-                timing_ctx.stats.num_full_setup_updates,
-                timing_ctx.stats.num_full_hold_updates,
-                timing_ctx.stats.num_full_setup_hold_updates);
+        print_timing_stats("Flow", timing_ctx.stats);
 
         /* free data structures */
         vpr_free_all(Arch, vpr_setup);
 
-        VTR_LOG("VPR suceeded\n");
+        VTR_LOG("VPR succeeded\n");
 
     } catch (const tatum::Error& tatum_error) {
         VTR_LOG_ERROR("%s\n", format_tatum_error(tatum_error).c_str());

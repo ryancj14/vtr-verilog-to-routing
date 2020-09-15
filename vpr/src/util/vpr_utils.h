@@ -207,6 +207,27 @@ int max_pins_per_grid_tile();
 void pretty_print_uint(const char* prefix, size_t value, int num_digits, int scientific_precision);
 void pretty_print_float(const char* prefix, double value, int num_digits, int scientific_precision);
 
+void print_timing_stats(std::string name,
+                        const t_timing_analysis_profile_info& current,
+                        const t_timing_analysis_profile_info& past = t_timing_analysis_profile_info());
+
+/*
+ * Builds legal_pos and num_legal_pos
+ *
+ * num_legal_pos is total number of each type of subtiles
+ * num_legal[0..device_ctx.num_block_types - 1][0..num_sub_tiles - 1] = total number of this type of subtile
+ *
+ * legal_pos is a lookup of all subtiles by sub_tile type
+ * legal_pos[0..device_ctx.num_block_types-1][0..num_sub_tiles - 1][0..num_legal - 1] = t_pl_loc for a single
+ * placement location of the proper tile type and sub_tile type.
+ *
+ * TODO: replace num_legal_pos by using the .size() of legal_pos instead.
+ */
+void alloc_legal_placement_locations(std::vector<std::vector<std::vector<t_pl_loc>>>& legal_pos,
+                                     std::vector<std::vector<int>>& num_legal_pos);
+
+void load_legal_placement_locations(std::vector<std::vector<std::vector<t_pl_loc>>>& legal_pos);
+
 // Make room in a vector, with amortized O(1) time by using a pow2 growth pattern.
 //
 // This enables potentially random insertion into a vector with amortized O(1)

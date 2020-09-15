@@ -19,10 +19,10 @@ endif()
 # Each schema used should appear here.
 set(CAPNP_DEFS
     place_delay_model.capnp
-    connection_map.capnp
     matrix.capnp
     gen/rr_graph_uxsdcxx.capnp
     map_lookahead.capnp
+    extended_map_lookahead.capnp
     )
 capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS
     ${CAPNP_DEFS}

@@ -104,6 +104,7 @@ When a routing is on-screen, clicking on **Toggle RR** lets you to choose betwee
 The routing resource view can be very useful in ensuring that you have correctly described your FPGA in the architecture description file -- if you see switches where they shouldn’t be or pins on the wrong side of a clb, your architecture description needs to be revised.
 
 Wiring segments are drawn in black, input pins are drawn in sky blue, and output pins are drawn in pink.
+Sinks are drawn in dark slate blue, and sources in plum.
 Direct connections between output and input pins are shown in medium purple.
 Connections from wiring segments to input pins are shown in sky blue, connections from output pins to wiring segments are shown in pink, and connections between wiring segments are shown in green.
 The points at which wiring segments connect to clb pins (connection box switches) are marked with an ``x``.
@@ -134,6 +135,16 @@ Lighter colours (e.g. yellow) correspond to highly utilized channels, while dark
 
     Routing Utilization during placement and routing
 
+Toggle Block Internal
+-------------------------------
+During placement and routing you can adjust the level of block detail you visualize by using the **Toggle Block Internal**. Each block can contain a number of flip flops (ff), look up tables (lut), and other primitives. The higher the number, the deeper into the hierarchy within the cluster level block you see. 
+
+.. figure:: https://www.verilogtorouting.org/img/ToggleBlockInternal.gif
+    :align: center
+
+    Visualizing Block Internals
+
+
 Button Description Table
 ------------------------
 +-------------------+-------------------+------------------------------+------------------------------+
@@ -143,6 +154,12 @@ Button Description Table
 |                   |                   | shown                        | more details; Click to reset |
 |                   |                   |                              | when reached maximum level   |
 |                   |                   |                              | of detail                    |
++-------------------+-------------------+------------------------------+------------------------------+
+| Toggle Block      | Placement/Routing | Adjusts the level of         | Click multiple times to      |
+| Internal          |                   | visualized block detail      | go deeper into the           |
+|                   |                   |                              | hierarchy within the cluster |
+|                   |                   |                              | level block                  |
+|                   |                   |                              |                              |
 +-------------------+-------------------+------------------------------+------------------------------+
 | Blk Pin Util      | Placement/Routing | Visualizes block pin         | Click multiple times to      |
 |                   |                   | utilization                  | visualize all block pin      |

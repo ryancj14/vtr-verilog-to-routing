@@ -28,9 +28,17 @@ The architecture tag contains the following tags:
 
 Recognized BLIF Models (<models>)
 ---------------------------------
-The ``<models>`` tag contains ``<model name="string">`` tags.
+The ``<models>`` tag contains ``<model name="string" never_prune="string">`` tags.
 Each ``<model>`` tag describes the BLIF ``.subckt`` model names that are accepted by the FPGA architecture.
 The name of the model must match the corresponding name of the BLIF model.
+
+The never_prune flag is optional and can be either:
+
+* false (default)
+* true
+
+Normally blocks with no output nets are pruned away by the netlist sweepers in vpr (removed from the netlist); this is the default behaviour. If never_prune = "true" is set on a model, then blocks that are instances of that model will not be swept away during netlist cleanup. This can be helpful for some special blocks that do have only input nets and are required to be placed on the device for some features to be active, so space on the chip is still reserved for them, despite them not driving any connection.
+One example is the IDELAYCTRL of the Series7 devices, which takes as input a reference clock and internally controls and synchronizes all the IDELAYs in a specific clock region, with no output net necessary for it to function correctly.
 
 .. note::
     Standard blif structures (``.names``, ``.latch``, ``.input``, ``.output``) are accepted by default, so these models should not be described in the <models> tag.
@@ -1416,7 +1424,7 @@ The following tags are common to all <pb_type> tags:
     Multple clock ports are described using multiple ``<clock>`` tags.
     *See above descriptions on inputs*
 
-.. arch:tag:: <mode name="string">
+.. arch:tag:: <mode name="string" disable_packing="bool">
 
     :req_param name:
         Name for this mode.
@@ -1429,6 +1437,16 @@ The following tags are common to all <pb_type> tags:
     .. note:: Modes within the same parent ``<pb_type>`` are mutually exclusive.
 
     .. note:: If a ``<pb_type>`` has only one mode of operation the mode tag can be omitted.
+
+    :opt_param disable_packing:
+        Specify if a mode is disabled or not for VPR packer.
+        When a mode is defined to be disabled for packing (``disable_packing="true"``), packer will not map any logic to the mode.
+        This optional syntax aims to help debugging of multi-mode ``<pb_type>`` so that users can spot bugs in their XML definition quickly. 
+        By default, it is set to ``false``.
+
+    .. note:: When a mode is specified to be disabled for packing, its child ``<pb_type>`` and the ``<mode>`` of child ``<pb_type>`` will be considered as disabled for packing automatically. There is no need to specify ``disable_packing`` for every ``<mode>`` in the tree of ``<pb_type>``.
+
+    .. warning:: This is a power-user debugging option. See :ref:`multi_mode_logic_block_tutorial` for a detailed how-to-use.
 
     For example:
 
