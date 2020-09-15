@@ -2,6 +2,7 @@
 
 #include "router_lookahead_map.h"
 #include "router_lookahead_extended_map.h"
+#include "connection_box_lookahead_map.h"
 #include "vpr_error.h"
 #include "globals.h"
 #include "route_timing.h"
@@ -16,6 +17,8 @@ static std::unique_ptr<RouterLookahead> make_router_lookahead_object(e_router_lo
         return std::make_unique<MapLookahead>();
     } else if (router_lookahead_type == e_router_lookahead::EXTENDED_MAP) {
         return std::make_unique<ExtendedMapLookahead>();
+    } else if (router_lookahead_type == e_router_lookahead::CONNECTION_BOX_MAP) {
+        return std::make_unique<ConnectionBoxMapLookahead>();
     } else if (router_lookahead_type == e_router_lookahead::NO_OP) {
         return std::make_unique<NoOpLookahead>();
     }
@@ -82,7 +85,12 @@ std::pair<float, float> ClassicLookahead::get_expected_delay_and_cong(int node, 
                      + R_upstream * (num_segs_same_dir * same_data.C_load + num_segs_ortho_dir * ortho_data.C_load)
                      + ipin_data.T_linear;
 
-        return std::make_pair(params.criticality * Tdel, (1 - params.criticality) * cong_cost);
+        float penalty_cost = num_segs_same_dir * same_data.penalty_cost
+                             + num_segs_ortho_dir * ortho_data.penalty_cost
+                             + ipin_data.penalty_cost
+                             + sink_data.penalty_cost;
+
+        return std::make_pair(penalty_cost + params.criticality * Tdel, (1 - params.criticality) * cong_cost);
     } else if (rr_type == IPIN) { /* Change if you're allowing route-throughs */
         return std::make_pair(0., device_ctx.rr_indexed_data[SINK_COST_INDEX].base_cost);
 
