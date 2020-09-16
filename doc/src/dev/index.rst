@@ -6,9 +6,9 @@ Developer Guide
 .. toctree::
     :glob:
 
-    building
-    contributing
+    contributing/index
     developing
+    c_api_doc
     tutorials/index
     support
     license

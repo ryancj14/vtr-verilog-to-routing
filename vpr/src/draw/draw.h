@@ -13,6 +13,7 @@
 #    include "ezgl/graphics.hpp"
 #    include "draw_color.h"
 #    include "search_bar.h"
+#    include "draw_debug.h"
 
 extern ezgl::application::settings settings;
 extern ezgl::application application;
@@ -32,7 +33,7 @@ void free_draw_structs();
 #ifndef NO_GRAPHICS
 
 void draw_get_rr_pin_coords(int inode, float* xcen, float* ycen);
-void draw_get_rr_pin_coords(const t_rr_node node, float* xcen, float* ycen);
+void draw_get_rr_pin_coords(const t_rr_node& node, float* xcen, float* ycen);
 
 void draw_triangle_along_line(ezgl::renderer* g, ezgl::point2d start, ezgl::point2d end, float relative_position = 1., float arrow_size = DEFAULT_ARROW_SIZE);
 void draw_triangle_along_line(ezgl::renderer* g, ezgl::point2d loc, ezgl::point2d start, ezgl::point2d end, float arrow_size = DEFAULT_ARROW_SIZE);
@@ -76,8 +77,30 @@ void toggle_crit_path(GtkWidget* /*widget*/, gint /*response_id*/, gpointer /*da
 void toggle_block_pin_util(GtkWidget* /*widget*/, gint /*response_id*/, gpointer /*data*/);
 void toggle_router_expansion_costs(GtkWidget* /*widget*/, gint /*response_id*/, gpointer /*data*/);
 void toggle_placement_macros(GtkWidget* /*widget*/, gint /*response_id*/, gpointer /*data*/);
+void net_max_fanout(GtkWidget* /*widget*/, gint /*response_id*/, gpointer /*data*/);
+void set_net_alpha_value(GtkWidget* widget, gint /*response_id*/, gpointer /*data*/);
+void set_net_alpha_value_with_enter(GtkWidget* widget, gint /*response_id*/, gpointer /*data*/);
+float get_net_alpha();
 
 ezgl::color get_block_type_color(t_physical_tile_type_ptr type);
+
+/* This routine highlights the blocks affected in the latest move      *
+ * It highlights the old and new locations of the moved blocks         *
+ * It also highlights the moved block input and output terminals       *
+ * Currently, it is used in placer debugger when breakpoint is reached */
+void highlight_moved_block_and_its_terminals(const t_pl_blocks_to_be_moved&);
+
+// pass in an (x,y,subtile) location and the color in which it should be drawn.
+// This overrides the color of any block placed in that location, and also applies if the location is empty.
+void set_draw_loc_color(t_pl_loc, ezgl::color);
+
+// clear the colored_locations vector
+void clear_colored_locations();
+
+// This routine takes in a (x,y) location.
+// If the input loc is marked in colored_locations vector, the function will return true and the correspnding color is sent back in loc_color
+// otherwise, the function returns false (the location isn't among the highlighted locations)
+bool highlight_loc_with_specific_color(int x, int y, ezgl::color& loc_color);
 
 #endif /* NO_GRAPHICS */
 

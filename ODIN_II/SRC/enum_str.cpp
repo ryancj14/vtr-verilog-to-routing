@@ -1,8 +1,16 @@
 #include "odin_types.h"
 
+const char* ieee_std_STR[] = {
+    "1364-1995",
+    "1364-2001-noconfig",
+    "1364-2001",
+    "1364-2005",
+};
+
 const char* file_extension_supported_STR[] = {
     ".v",
-    ".vh"};
+    ".vh",
+};
 
 const char* edge_type_e_STR[] = {
     "UNDEFINED_SENSITIVITY",
@@ -70,6 +78,7 @@ const char* operation_list_STR[][2] = {
     {"SR", "SR"},               // >>
     {"ASR", "ASR"},             // >>>
     {"SL", "SL"},               // <<
+    {"ASL", "ASL"},             // <<<
     {"CASE_EQUAL", "cEQ"},      // ===
     {"CASE_NOT_EQUAL", "cNEQ"}, // !==
     {"ADDER_FUNC", "ADDER"},
@@ -99,7 +108,6 @@ const char* ids_STR[] = {
     "INOUT",
     "WIRE",
     "REG",
-    "INTEGER",
     "GENVAR",
     "PARAMETER",
     "LOCALPARAM",
@@ -152,7 +160,6 @@ const char* ids_STR[] = {
     "CASE_DEFAULT",
     "ALWAYS",
     "IF",
-    "IF_Q",
     "FOR",
     "WHILE",
     /* Delay Control */
@@ -160,6 +167,7 @@ const char* ids_STR[] = {
     "POSEDGE",
     "NEGEDGE",
     /* expressions */
+    "TERNARY_OPERATION",
     "BINARY_OPERATION",
     "UNARY_OPERATION",
     /* basic primitives */
@@ -170,6 +178,10 @@ const char* ids_STR[] = {
     /* basic identifiers */
     "IDENTIFIERS",
     "NUMBERS",
+    /* C functions */
+    "C_ARG_LIST",
+    "DISPLAY",
+    "FINISH",
     /* Hard Blocks */
     "HARD_BLOCK",
     "HARD_BLOCK_NAMED_INSTANCE",
